@@ -1,0 +1,203 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+</style>
+</head>
+<body>
+<h2> D3 Visualizations</h2>
+<div> Select Mime Type : 
+<select id="mime_types" onchange="drawgraphsfor()"> 
+	<option value=''>select a mime type</option>
+	<option value='postscript'>application/postscript</option>
+	<option value='x-sh'>application/x-sh</option>
+	<option value='vnd.openxml'>application/vnd.openxmlformats-officedocument.wordprocessingml.document</option>
+	<option value='mpeg'>audio/mpeg</option>
+	<option value='xhtml+xml'>application/xhtml+xml</option>
+	<option value='ms-word'>application/ms-word</option>
+	<option value='x-elc'>application/x-elc</option>
+	<option value='x-msdownload'>application/x-msdownload</option>
+	<option value='gzip'>application/gzip</option>
+	<option value='vnd.ms-excel'>application/vnd.ms-excel</option>
+	<option value='x-tika-msoffice'>application/x-tika-msoffice</option>
+	<option value='octet-stream'>application/octet-stream</option>
+	<option value='png'>image/png</option>
+	<option value='jpeg'>image/jpeg</option>
+	<option value='quicktime'>video/quicktime</option>
+</select>
+<div id="all_graphs"></div>
+<script src="d3.min.js"></script>
+<script type="text/javascript" src="json_data/postscript_FHT.json"></script>
+<script type="text/javascript" src="json_data/x-sh_FHT.json"></script>
+<script type="text/javascript" src="json_data/vnd.openxmlformats-officedocument.wordprocessingml.document_FHT.json"></script>
+<script type="text/javascript" src="json_data/audio_mpeg_FHT.json"></script>
+<script type="text/javascript" src="json_data/xhtml+xml_FHT.json"></script>
+<script type="text/javascript" src="json_data/msword_FHT.json"></script>
+<script type="text/javascript" src="json_data/x-elc_FHT.json"></script>
+<script type="text/javascript" src="json_data/x-msdownload_FHT.json"></script>
+<script type="text/javascript" src="json_data/gzip_FHT.json"></script>
+<script type="text/javascript" src="json_data/vnd.ms-excel_FHT.json"></script>
+<script type="text/javascript" src="json_data/x-tika-msoffice_FHT.json"></script>
+<script type="text/javascript" src="json_data/octet-stream_FHT.json"></script>
+<script type="text/javascript" src="json_data/png_FHT.json"></script>
+<script type="text/javascript" src="json_data/jpeg_FHT.json"></script>
+<script type="text/javascript" src="json_data/quicktime_FHT.json"></script>
+<script>
+
+//function to draw graph
+function drawGraph(t,r,b,l, num_of_rows, message, mime, id, keys, matrixData) { 
+  var margin = {top: t, right: r, bottom: b, left: l},
+      width = 960 - margin.left - margin.right,
+      height = 500 - margin.top - margin.bottom;
+  var x = d3.scale.linear()
+    .range([0, width])
+    .domain([0, 256]);
+
+  var y = d3.scale.linear()
+    .range([0, height])
+    .domain([0, num_of_rows+1]);
+
+  var color = d3.scale.linear()
+    .domain([0,1])
+    .range(['#FFFFFF','#D7191C']);
+
+  var tooltip = d3.select('body').select('#all_graphs').append('div').attr("id","tooltip")
+              .style('position', 'absolute')
+              .style('padding', '0 10px')
+              .style('opacity', 0)
+
+  var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient('top');
+
+  var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient('left');
+
+  d3.select('body').select("#all_graphs").append("div").attr("id","graph_"+id).append("div").style("padding","10px 10px 10px 10px").html(message+"&nbsp&nbsp Mime:"+mime);
+  var svg = d3.select('body').select("#graph_"+id).append('svg')
+    .attr('width', width + margin.left + margin .right)
+    .attr('height', height + margin.top + margin.bottom)
+  .append('g')
+    .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+  var mapData = []; 
+  for(var i=0;i<keys.length;i++) {
+    for(var j=0;j<256;j++) {
+        mapData.push({
+          index : i,
+          byteValue : j,
+          strength : matrixData[i][j]
+        });
+        // console.log(matrixData[i][j]);
+    }
+  } 
+
+  svg.selectAll('.cell')
+    .data(mapData)
+  .enter().append('rect')
+    .attr('x', function (d) { return x(d.byteValue); })
+    .attr('y', function (d) { return y(d.index); })
+    .attr('width', function (d) { return x(1); })
+    .attr('height', function (d) { return y(1); })
+    .attr('fill', function (d) { return color(d.strength); })
+    .attr('stroke','white')
+    .attr('stroke-width', 0.2)
+    .on('mouseover', function(d) {
+
+              tooltip.transition()
+                  .style('opacity', .9)
+
+              tooltip.html("Byte: "+d.byteValue +"&nbsp&nbspCorrelation Value: "+d.strength +"&nbsp&nbsp Index:"+d.index)
+                  .style('left', (d3.event.pageX + 35) + 'px')
+                  .style('top',  (d3.event.pageY + 30) + 'px')
+                  .style('color', 'black')
+
+
+              tempColor = this.style.fill;
+              d3.select(this)
+                  .style('opacity', .5)
+                  .style('fill', '#4dd2ff')
+          })
+    .on('mouseout', function(d) {
+              d3.select(this)
+                  .style('opacity', 1)
+                  .style('fill', tempColor)
+          });
+
+  svg.append("g")
+    .attr("class", "axis")
+    .call(xAxis);
+
+  svg.append("g")
+    .attr("class", "y axis")
+    .call(yAxis);
+}
+
+//helper function to draw graph
+function drawgraphsfor() { 
+	document.getElementById("all_graphs").innerHTML ="";
+
+	var data;
+	var mime_types = document.getElementById("mime_types").value;
+	if(mime_types == 'postscript')
+		data=postscript_data;
+	else if(mime_types == 'x-sh')
+		data=x_sh_data;
+	else if(mime_types == 'vnd.openxml')
+		data=vnd_openxml_data;
+	else if(mime_types == 'mpeg')
+		data=mpeg_data;
+	else if(mime_types == 'xhtml+xml')
+		data=xhtml_xml_data;
+	else if(mime_types == 'ms-word')
+		data=ms_word_data;
+	else if(mime_types == 'x-elc')
+		data = x_elc_data;
+	else if(mime_types == 'x-msdownload')
+		data = x_msdownload_data;
+	else if(mime_types == 'gzip')
+		data = gzip_data;
+	else if(mime_types == 'vnd.ms-excel')
+		data = vnd_ms_excel_data;
+	else if(mime_types == 'x-tika-msoffice')
+		data = x_tika_msoffice_data;
+	else if(mime_types == 'octet-stream')
+		data = octet_stream_data;
+	else if(mime_types == 'png')
+		data = png_data;
+	else if(mime_types == 'jpeg')
+		data = jpeg_data;
+	else if(mime_types == 'quicktime')
+		data = quicktime_data;
+
+	for(var g=0; g<data.graphs.length;g++) {
+	  var matrixData=[];
+	  var keys=[];
+	  for(key in data.graphs[g].data) {
+	    // console.log(key);
+	    if(data.graphs[g].data.hasOwnProperty(key)){
+	      keys.push(key);
+	      matrixData.push(data.graphs[g].data[key]);
+	      
+	    }
+	    
+	  }
+	  
+	  drawGraph(20,20,30,30,keys.length,data.graphs[g].title, data.graphs[g].mime,g, keys, matrixData);
+	}
+}
+
+</script>
+</body>
+</html>

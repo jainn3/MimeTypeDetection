@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>D3 Graphic</title>
+</head>
+<style type="text/css">
+  
+
+text{
+  font: 13px sans-serif;
+}
+
+</style>
+
+<body>
+  <div class="container">
+    <h2>D3 Visualization</h2>
+    <div> Select Mime Type : 
+    <select id="mime_types" onchange="drawgraphsfor()"> 
+      <option value=''>select a mime type</option>
+      <option value='postscript'>application/postscript</option>
+      <option value='x-sh'>application/x-sh</option>
+      <option value='vnd.openxml'>application/vnd.openxmlformats-officedocument.wordprocessingml.document</option>
+      <option value='mpeg'>audio/mpeg</option>
+      <option value='xhtml+xml'>application/xhtml+xml</option>
+      <option value='ms-word'>application/ms-word</option>
+      <option value='x-elc'>application/x-elc</option>
+      <option value='x-msdownload'>application/x-msdownload</option>
+      <option value='gzip'>application/gzip</option>
+      <option value='vnd.ms-excel'>application/vnd.ms-excel</option>
+      <option value='x-tika-msoffice'>application/x-tika-msoffice</option>
+      <option value='octet-stream'>application/octet-stream</option>
+      <option value='png'>image/png</option>
+      <option value='jpeg'>image/jpeg</option>
+      <option value='quicktime'>video/quicktime</option>
+    </select>
+    <div id="chart"></div>
+  </div>
+  <script src="d3.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+  <script type="text/javascript" src="json_data/G-postscript.json"></script>
+  <script type="text/javascript" src="json_data/G-x-sh.json"></script>
+  <script type="text/javascript" src="json_data/G-vnd.openxmlformats-officedocument.wordprocessingml.document.json"></script>
+  <script type="text/javascript" src="json_data/G-mpeg.json"></script>-
+  <script type="text/javascript" src="json_data/G-xhtml+xml.json"></script>
+  <script type="text/javascript" src="json_data/G-msword.json"></script>
+  <script type="text/javascript" src="json_data/G-x-elc.json"></script>
+  <script type="text/javascript" src="json_data/G-x-msdownload.json"></script>
+  <script type="text/javascript" src="json_data/G-gzip.json"></script>
+  <script type="text/javascript" src="json_data/G-vnd.ms-excel.json"></script>
+  <script type="text/javascript" src="json_data/G-x-tika-msoffice.json"></script>
+  <script type="text/javascript" src="json_data/G-octet-stream.json"></script>
+  <script type="text/javascript" src="json_data/G-png.json"></script>
+  <script type="text/javascript" src="json_data/G-jpeg.json"></script>
+  <script type="text/javascript" src="json_data/G-quicktime.json"></script>
+
+  <script type="text/javascript">
+  //helper function to draw graph
+  function drawgraphsfor() { 
+    document.getElementById("chart").innerHTML ="";
+
+  var data;
+  var mime_types = document.getElementById("mime_types").value;
+  if(mime_types == 'postscript')
+    data=postscript_data;
+  else if(mime_types == 'x-sh')
+    data=x_sh_data;
+  else if(mime_types == 'vnd.openxml')
+    data=vnd_openxml_data;
+  else if(mime_types == 'mpeg')
+    data=mpeg_data;
+  else if(mime_types == 'xhtml+xml')
+    data=xhtml_xml_data;
+  else if(mime_types == 'ms-word')
+    data=ms_word_data;
+  else if(mime_types == 'x-elc')
+    data = x_elc_data;
+  else if(mime_types == 'x-msdownload')
+    data = x_msdownload_data;
+  else if(mime_types == 'gzip')
+    data = gzip_data;
+  else if(mime_types == 'vnd.ms-excel')
+    data = vnd_ms_excel_data;
+  else if(mime_types == 'x-tika-msoffice')
+    data = x_tika_msoffice_data;
+  else if(mime_types == 'octet-stream')
+    data = octet_stream_data;
+  else if(mime_types == 'png')
+    data = png_data;
+  else if(mime_types == 'jpeg')
+    data = jpeg_data;
+  else if(mime_types == 'quicktime')
+    data = quicktime_data;
+
+    bardata = data;
+    console.log()
+    var top= 30, right= 30, bottom= 40, left=50; 
+    var json = data;
+    var count = 1;
+    for (g in json.graphs) {
+        bardata = json.graphs[g].data;
+        message = json.graphs[g].title;
+        type = json.graphs[g].mime;
+        drawgraph(bardata,30,30,40,50,count, message, type);
+        top+=100;
+        bottom+=100;
+        count+=1;
+    }
+  }
+// function to draw graph
+    function drawgraph(data, t, r, b, l, id, message, type) {
+
+        var margin = { top: t, right: r, bottom: b, left:l }
+
+        var height = 300 ,
+            width = 500 ,
+            barWidth = 25,
+            barOffset = 5;
+        var tempColor;
+
+        var colors = d3.scale.linear()
+        .domain([0, d3.max(bardata)])
+        .range(['#00FF00','#000000'])
+
+        var yScale = d3.scale.linear()
+                .domain([0, d3.max(bardata)])
+                .range([0, height]);
+
+        var xScale = d3.scale.ordinal()
+                .domain(d3.range(0, bardata.length))
+                .rangeBands([0, 1750], 0.1)
+
+        var tooltip = d3.select('body').select("#chart").append('div')
+                .style('position', 'absolute')
+                .style('padding', '0 10px')
+                .style('background', 'yellowgreen')
+                .style('opacity', 0)
+
+        d3.select('#chart').append("div").attr("id","chart_"+id).append("div").html(message+"&nbsp&nbsp&nbsp&nbsp&nbsp&nbspMimeType:"+ type);
+
+        var myChart = d3.select('#chart').select("#chart_"+id).append('svg')
+            .attr('width', 2000) 
+            .attr('height', 370) 
+            .append('g')
+            .attr('transform', 'translate('+ margin.left +', '+ margin.top +')')
+            .selectAll('g').data(bardata)
+            .enter().append('g')
+                .append("rect")
+                .style('fill', function(d,i) {
+                    return colors(d);
+                })
+                .attr('width', xScale.rangeBand())
+                .attr('x', function(d,i) {
+                    return xScale(i);
+                })
+      
+            .on('mouseover', function(d, i) {
+
+                tooltip.transition()
+                    .style('opacity', .9)
+
+                tooltip.html("Freq:"+ d +"&nbsp&nbspByte: "+i)
+                    .style('left', (d3.event.pageX - 35) + 'px')
+                    .style('top',  (d3.event.pageY - 30) + 'px')
+                    .style('color', 'black')
+
+
+                tempColor = this.style.fill;
+                d3.select(this)
+                    .style('opacity', .5)
+                    .style('fill', '#4dd2ff')
+            })
+
+            .on('mouseout', function(d) {
+                d3.select(this)
+                    .style('opacity', 1)
+                    .style('fill', tempColor)
+            })
+
+        myChart.transition()
+            .attr('height', function(d) {
+                return yScale(d);
+            })
+            .attr('y', function(d) {
+                return height - yScale(d);
+            })
+            .delay(function(d, i) {
+                return i * 20;
+            })
+            .duration(1000)
+            .ease('elastic')
+
+        var vGuideScale = d3.scale.linear()
+            .domain([0, d3.max(bardata)])
+            .range([height, 0])
+
+        var vAxis = d3.svg.axis()
+            .scale(vGuideScale)
+            .orient('left')
+            .ticks(10)
+
+        var vGuide = d3.select('#chart').select("#chart_"+id).select('svg').append('g')
+            vAxis(vGuide)
+            vGuide.attr('transform', 'translate(' + margin.left + ', ' + margin.top + ')')
+            vGuide.selectAll('path')
+                .style({ fill: 'none', stroke: "green"})
+            vGuide.selectAll('line')
+                .style({ stroke: "white"})
+
+        var hAxis = d3.svg.axis()
+            .scale(xScale)
+            .orient('bottom')
+            .tickValues(xScale.domain().filter(function(d, i) {
+                return !(i % (bardata.length/5));
+            }))
+
+        var hGuide = d3.select('#chart').select("#chart_"+id).select('svg').append('g')
+            hAxis(hGuide)
+            hGuide.attr('transform', 'translate(' + margin.left + ', ' + (height + margin.top) + ')')
+            hGuide.selectAll('path')
+                .style({ fill: 'none', stroke: "green"})
+            hGuide.selectAll('line')
+                .style({ stroke: "white"})
+        d3.select('#chart').select("#chart_"+id).select('svg').append('g')
+        .append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("x",0 -2)
+            .attr("y", 6)
+            .attr("dy", ".71em")
+            .style("text-anchor", "end")
+            .text("Frequency");
+        
+        d3.select('#chart').select("#chart_"+id).select('svg').append('g')
+        .append("text")
+        .attr("text-anchor", "end")
+        .attr("x", width)
+        .attr("y", height+65)
+        .text("Byte Values");
+    }
+  </script>
+</body>
+</html>

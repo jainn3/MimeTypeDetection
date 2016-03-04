@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>D3 Graphic</title>
+</head>
+<style type="text/css">
+  
+
+text{
+  font: 13px sans-serif;
+}
+
+</style>
+
+<body>
+  <div class="container">
+    <h2>D3 Visualization</h2>
+    <div> Select Distribution : 
+    <select id="distribution_type" onchange="drawgraphsfor()"> 
+      <option value=''>select a distribution</option>
+      <option value='pre'>pre-updation of mimetypes.xml</option>
+      <option value='post'>post-updation of mimetypes.xml</option>
+    </select>
+    <button onclick="findDiff()"> Find Difference </button>
+    <div id="chart"></div>
+  </div>
+  <script src="d3.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+  <script type="text/javascript" src="json_data/pre_distribution_data.json"></script>
+  <script type="text/javascript" src="json_data/post_distribution_data.json"></script>
+
+  <script type="text/javascript">
+  //function to find difference between two frequency distribution
+  function findDiff() {
+   
+    var count = 0;
+    var newMime = "";reducedMime="",increasedMime="",unChanged="";
+    for (key in post_data) {
+      if(post_data.hasOwnProperty(key)) {
+        count+=1;
+        //check if new mime or not
+        // This is because we had earlier trimmed mime types extra information and now we haven't.
+        if(key == "dita+xml; format" || key == "x-msdownload; format")
+            continue;
+        if(pre_data.hasOwnProperty(key)) {
+
+          var oldCount = parseInt(pre_data[key]);
+          var newCount = parseInt(post_data[key]);
+          // var item = {"mime":key,"count":Math.abs(oldCount-newCount)};
+          if(oldCount < newCount ) {
+            increasedMime+="Mime : "+key+" Count : "+Math.abs(oldCount-newCount) + "<br/>";
+          } else if(oldCount > newCount) {
+            reducedMime+="Mime : "+key+" Count : "+Math.abs(oldCount-newCount) + "<br/>";
+          }
+          else{ 
+            unChanged+="Mime : "+key+ "<br/>";
+          }
+        }
+        // new mime type
+        else {
+          newMime+="Mime : "+key+" Count : "+post_data[key] + "<br/>";
+        }
+      } 
+    }
+    //report mime types & counts
+
+    var message = "<br/><u>Information regarding new mime types: </u><br/>" + newMime +
+      "<br/><u>Information regarding mimetypes with increased count:</u> <br/>" + increasedMime +
+      "<br/><u>Information regarding mimetypes with reduced count: </u><br/>" + reducedMime +
+      "<br/><u>Information regarding mimetypes with unchanged count: </u><br/>" + unChanged;
+    document.getElementById("chart").innerHTML = message;  
+  }
+
+  //helper function to draw graph
+  function drawgraphsfor() { 
+    document.getElementById("chart").innerHTML ="";
+    var type = document.getElementById("distribution_type").value;
+    var jsondata;
+    if (type == "pre")
+      jsondata = pre_data;
+    else
+      jsondata = post_data;
+
+      var keys1 = [];
+      var keys2 = [];
+      var keys3 = [];
+      var graph_data1=[];
+      var graph_data2=[];
+      var graph_data3=[];
+      var keys4 = [];
+      var graph_data4 = [];
+      var max1=0;
+      var max2=0;
+      var max3=0;
+      var max4 = 0;
+      for(key in jsondata) {
+          // console.log(key);
+          if(jsondata.hasOwnProperty(key)){
+            
+            if(jsondata[key] > 33000) {
+              keys1.push(key);
+              var item={"mime":key,"count":jsondata[key]/1000};
+              graph_data1.push(item);
+              max1 = Math.max(jsondata[key],max1);  
+            } else if(jsondata[key] > 850) {
+              keys2.push(key);
+              var item={"mime":key,"count":jsondata[key]/100};
+              graph_data2.push(item);
+              max12 = Math.max(jsondata[key],max2);  
+            } else if(jsondata[key] > 100){
+              keys3.push(key);
+              var item={"mime":key,"count":jsondata[key]/10};
+              graph_data3.push(item);
+              max3 = Math.max(jsondata[key],max3);  
+            }
+            else {
+              if(jsondata[key] > 0) {
+                keys4.push(key);
+                var item={"mime":key,"count":jsondata[key]};
+                graph_data4.push(item);
+                max4 = Math.max(jsondata[key],max4);
+              }
+              
+            }
+          }  
+      }
+
+    var top= 30, right= 30, bottom= 40, left=50; 
+    drawgraph(graph_data1,30,30,40,50,1, "", "Frequency in thousands");
+    top+=50;
+    bottom+=50;
+    drawgraph(graph_data2,30,30,40,50,2, "", "Frequency in hundreds");
+    top+=50;
+    bottom+=50;
+    drawgraph(graph_data3,30,30,40,50,3, "", "Frequency in tens");
+    top+=50;
+    bottom+=50;
+    drawgraph(graph_data4,30,30,40,50,4, "", "Normal Frequency");
+    
+    // console.log(graph_data4);
+
+    // var json = data;
+    // var count = 1;
+    // for (g in json.graphs) {
+    //     bardata = json.graphs[g].data;
+    //     message = json.graphs[g].title;
+    //     type = json.graphs[g].mime;
+    //     drawgraph(bardata,30,30,40,50,count, message, type);
+    //     top+=100;
+    //     bottom+=100;
+    //     count+=1;
+    // }
+  }
+// function to draw graph
+    function drawgraph(data, t, r, b, l, id, message, type) {
+
+
+        var margin = { top: t, right: r, bottom: b, left:l }
+
+        var height = 300,
+            width = 500 ,
+            barWidth = 25,
+            barOffset = 5;
+        var tempColor;
+
+        var max = d3.max(data, function(d) { return +d.count; });
+
+        var colors = d3.scale.linear()
+          .domain([0, max])
+          .range(['#00FF00','#000000'])
+        
+        var yScale = d3.scale.linear()
+                .domain([0, max])
+                .range([0, height]);
+
+        // console.log(data.length);
+        // console.log(max);
+        var xScale = d3.scale.ordinal()
+                .domain(d3.range(0, data.length))
+                .rangeBands([0, 800], 0.1)
+
+        var tooltip = d3.select('body').select("#chart").append('div')
+                .style('position', 'absolute')
+                .style('padding', '0 10px')
+                .style('background', 'yellowgreen')
+                .style('opacity', 0)
+
+        d3.select('#chart').append("div").attr("id","chart_"+id).append("div").html(message+"&nbsp&nbsp&nbsp&nbsp&nbsp&nbspNote:"+ type);
+        var myChart = d3.select('#chart').select("#chart_"+id).append('svg')
+            .attr('width', 900) 
+            .attr('height', 370) 
+            .append('g')
+            .attr('transform', 'translate('+ margin.left +', '+ margin.top +')')
+            .selectAll('g').data(data)
+            .enter().append('g')
+                .append("rect")
+                .style('fill', function(d,i) {
+                    return colors(d.count);
+                })
+                .attr('width', xScale.rangeBand())
+                .attr('x', function(d,i) {
+                    return xScale(i);
+                })
+      
+            .on('mouseover', function(d, i) {
+
+                tooltip.transition()
+                    .style('opacity', .9)
+                var custom_message = "";
+                if(id == 1)
+                  custom_message = "Mime:&nbsp"+d.mime+"&nbsp&nbsp&nbsp"+"Freq:"+d.count+"&nbspk";
+                else if(id == 2)
+                  custom_message = "Mime:&nbsp"+d.mime+"&nbsp&nbsp&nbsp"+"Freq:"+d.count+"&nbspx&nbsp100";
+                else if(id == 3)
+                  custom_message = "Mime:&nbsp"+d.mime+"&nbsp&nbsp&nbsp"+"Freq:"+d.count+"&nbspx&nbsp10";
+                else
+                  custom_message = "Mime:&nbsp"+d.mime+"&nbsp&nbsp&nbsp"+"Freq:"+d.count+"&nbsp";
+                tooltip.html(custom_message)
+                    .style('left', (d3.event.pageX + 35) + 'px')
+                    .style('top',  (d3.event.pageY + 30) + 'px')
+                    .style('color', 'black')
+
+
+                tempColor = this.style.fill;
+                d3.select(this)
+                    .style('opacity', .5)
+                    .style('fill', '#4dd2ff')
+            })
+
+            .on('mouseout', function(d) {
+                d3.select(this)
+                    .style('opacity', 1)
+                    .style('fill', tempColor)
+            })
+
+        myChart.transition()
+            .attr('height', function(d) {
+                return yScale(d.count);
+            })
+            .attr('y', function(d) {
+                return height - yScale(d.count);
+            })
+            .delay(function(d, i) {
+                return i * 20;
+            })
+            .duration(1000)
+            .ease('elastic')
+
+        var vGuideScale = d3.scale.linear()
+            .domain([0, max])
+            .range([height, 0])
+
+        var vAxis = d3.svg.axis()
+            .scale(vGuideScale)
+            .orient('left')
+            .ticks(10)
+
+        var vGuide = d3.select('#chart').select("#chart_"+id).select('svg').append('g')
+            vAxis(vGuide)
+            vGuide.attr('transform', 'translate(' + margin.left + ', ' + margin.top + ')')
+            vGuide.selectAll('path')
+                .style({ fill: 'none', stroke: "green"})
+            vGuide.selectAll('line')
+                .style({ stroke: "white"})
+
+        var hAxis = d3.svg.axis()
+            .scale(xScale)
+            .orient('bottom')
+            .tickValues(xScale.domain().filter(function(d, i) {
+                return !(i % (data.length/5));
+            }))
+
+        var hGuide = d3.select('#chart').select("#chart_"+id).select('svg').append('g')
+            hAxis(hGuide)
+            hGuide.attr('transform', 'translate(' + margin.left + ', ' + (height + margin.top) + ')')
+            hGuide.selectAll('path')
+                .style({ fill: 'none', stroke: "green"})
+            hGuide.selectAll('line')
+                .style({ stroke: "white"})
+        d3.select('#chart').select("#chart_"+id).select('svg').append('g')
+        .append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("x",0 -2)
+            .attr("y", 6)
+            .attr("dy", ".71em")
+            .style("text-anchor", "end")
+            .text("Frequency");
+        
+        d3.select('#chart').select("#chart_"+id).select('svg').append('g')
+        .append("text")
+        .attr("text-anchor", "end")
+        .attr("x", width)
+        .attr("y", height+65)
+        .text("Mime Types");
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+</style>
+</head>
+<body>
+<h2> D3 Visualizations</h2>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script type="text/javascript" src="G-html.json"></script>
+<script>
+
+for(var g=0; g<data.graphs.length;g++) {
+  var matrixData=[];
+  var keys=[];
+  for(key in data.graphs[g].data) {
+    console.log(key);
+    if(data.graphs[g].data.hasOwnProperty(key)){
+      keys.push(key);
+      matrixData.push(data.graphs[g].data[key]);
+      
+    }
+    
+  }
+  
+  drawGraph(20,20,30,30,keys.length,data.graphs[g].title, data.graphs[g].mime,g);
+}
+  
+
+
+
+function drawGraph(t,r,b,l, num_of_rows, message, mime, id) { 
+  var margin = {top: t, right: r, bottom: b, left: l},
+      width = 1500 - margin.left - margin.right,
+      height = 1000 - margin.top - margin.bottom;
+  var x = d3.scale.linear()
+    .range([0, width])
+    .domain([0, 256]);
+
+  var y = d3.scale.linear()
+    .range([0, height])
+    .domain([0, num_of_rows+1]);
+
+  var color = d3.scale.linear()
+    .domain([0,1])
+    .range(['#FFFFFF','#D7191C']);
+  
+  var color_avg_diff = d3.scale.linear()
+    .domain([-1,0,1])
+    .range(['#00FF00','#FFFFFF','#0000FF']);
+
+  var tooltip = d3.select('body').append('div')
+              .style('position', 'absolute')
+              .style('padding', '0 10px')
+              .style('opacity', 0)
+
+  var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient('top');
+
+  var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient('left');
+
+  d3.select('body').append("div").attr("id","graph_"+id).append("div").style("padding","10px 10px 10px 10px").html(message+"&nbsp&nbsp Mime:"+mime);
+  var svg = d3.select('body').select("#graph_"+id).append('svg')
+    .attr('width', width + margin.left + margin .right)
+    .attr('height', height + margin.top + margin.bottom)
+  .append('g')
+    .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+  var mapData = []; 
+  for(var i=0;i<keys.length;i++) {
+    for(var j=0;j<256;j++) {
+        mapData.push({
+          index : i,
+          byteValue : j,
+          strength : matrixData[i][j]
+        });
+        // console.log(matrixData[i][j]);
+    }
+  } 
+
+  svg.selectAll('.cell')
+    .data(mapData)
+  .enter().append('rect')
+    .attr('x', function (d) { return x(d.byteValue); })
+    .attr('y', function (d) { return y(d.index); })
+    .attr('width', function (d) { return x(1); })
+    .attr('height', function (d) { return y(1); })
+    .attr('fill', function (d) { 
+		if(d.index > d.byteValue)
+			return color_avg_diff(d.strength);
+		else
+			return color(d.strength); })
+    .attr('stroke','white')
+    .attr('stroke-width', 0.2)
+    .on('mouseover', function(d) {
+
+              tooltip.transition()
+                  .style('opacity', .9)
+
+              tooltip.html("Index: "+d.index+"Byte: "+d.byteValue +"&nbsp&nbspCorrelation Value: "+d.strength)
+                  .style('left', (d3.event.pageX - 35) + 'px')
+                  .style('top',  (d3.event.pageY - 30) + 'px')
+                  .style('color', 'black')
+
+
+              tempColor = this.style.fill;
+              d3.select(this)
+                  .style('opacity', .5)
+                  .style('fill', '#4dd2ff')
+          })
+    .on('mouseout', function(d) {
+              d3.select(this)
+                  .style('opacity', 1)
+                  .style('fill', tempColor)
+          });
+
+  svg.append("g")
+    .attr("class", "axis")
+    .call(xAxis);
+
+  svg.append("g")
+    .attr("class", "y axis")
+    .call(yAxis);
+}  
+
+</script>
+</body>
+</html>
